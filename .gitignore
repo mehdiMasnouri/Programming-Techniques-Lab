@@ -1,0 +1,22 @@
+# Ignore CLion IDE files
+.idea/
+
+# Ignore build artifacts
+cmake-build-*/
+
+# Ignore compiled executables
+*.exe
+*.out
+
+# Ignore object files
+*.o
+
+# Ignore generated files
+*.generated
+
+# Ignore backup files
+*~
+
+# Ignore system-specific files
+.DS_Store
+Thumbs.db
