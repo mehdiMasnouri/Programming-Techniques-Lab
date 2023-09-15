@@ -1,47 +1,71 @@
 #include <stdio.h>
 
-int main() {
+int main () {
 
-    FILE *inputFile, *outputFile;
-   inputFile = fopen("Input_file.txt", "r" );
-    outputFile = fopen ("output_file.txt", "w" );
+    float firstNumber,secondNumber;
+    char operation;
+    FILE *fpin, *fout;
 
-
-    char operator;
-    float op1;
-    float op2;
-    float result;
-
-    while(fscanf(inputFile, " %c %f %f", &operator, &op1, &op2) != EOF) {
-        switch(operator) {
-            case '+':
-                result = op1 + op2;
-                fprintf(outputFile, "+ %.2f\n", result);
-                break;
-            case '-':
-                result = op1 - op2;
-                fprintf(outputFile, "- %.2f\n", result);
-                break;
-            case '*':
-                result = op1 * op2;
-                fprintf(outputFile, "* %.2f\n", result);
-                break;
-            case '/':
-                if(op2 == 0){
-                    fprintf(outputFile, "/ Error: Division by zero!\n");
-                }
-                else{
-                    result = op1 / op2;
-                    fprintf(outputFile, "/ %.2f\n", result);
-                }
-                break;
-            default:
-                fprintf(outputFile, "Error: Invalid operator!\n");
-        }
+    fpin= fopen("../input.txt","r");
+    if ( fpin == NULL)
+    {
+        puts("Error opening input file.\n");
+        return 1;
     }
 
-    fclose(inputFile);
-    fclose(outputFile);
+    fout= fopen("../output.txt","w");
+    if (fout== NULL){
+        puts("Error opening output file.\n");
+        return 1;
+    }
+
+
+    do {
+        int itemsRead = fscanf(fpin," %c %f %f",&operation,&firstNumber,&secondNumber);
+        if ( itemsRead==3){
+            switch (operation) {
+                case '+':
+                    fprintf(fout,"%c %.2f\n",operation,(firstNumber+secondNumber));
+                    break;
+                case '-':
+                    fprintf(fout,"%c %.2f\n",operation,(firstNumber - secondNumber));
+                    break;
+                case '*':
+                    fprintf(fout,"%c %.2f\n",operation,(firstNumber * secondNumber));
+                    break;
+                case '/':
+                    if ( secondNumber==0){
+                        printf("divide by zero");
+                        return 1;
+                    }
+                    fprintf(fout,"%c %.2f\n",operation,(firstNumber / secondNumber));
+                    break;
+                default:
+                    puts("Error occurred !\n");
+                    fclose(fpin);
+                    fclose(fout);
+                    return 1;
+
+
+            }
+
+
+        } else if (itemsRead == EOF) {
+            puts("programme reached at the end of the file.\n");
+
+        } else
+        {
+            puts("Error occurred!");
+            fclose(fpin);
+            fclose(fout);
+            return 1;
+        }
+
+    } while ( !feof(fpin));
+    fclose(fpin);
+    fclose(fout);
+    puts("The programme successfully finished.");
+
 
 
 
