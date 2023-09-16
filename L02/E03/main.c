@@ -1,113 +1,141 @@
 #include <stdio.h>
-
+#include <stdlib.h>
+#include <ctype.h>
 
 int compressing(FILE *fin, FILE *fout);
 int decompressing(FILE *fin, FILE *fout);
-int main() {
-    int result=1;
-    char inputFile []= "..\\source.txt";
-    char choice;
-    FILE *input , *output;
 
+int main()
+{
+    int choice;
+    FILE *fin, *fout;
+    char source[100], dest[100];
 
-    printf("ciao!\n");
-    printf("1 - compressing\n");
-    printf("2 - decompressing\n");
-    printf("enter the number corresponds to operation : ");
-    scanf(" %c",&choice);
+    printf("Enter the source filename: ");
+    scanf("%s", source);
 
-    switch (choice) {
-
-        case '1':
-            input= fopen(inputFile,"r");
-            if (input== NULL){
-                printf("Error in opening input file!");
-                return 1;
-            }
-            result=compressing(input,output);
-            break;
-        case '2':
-            input= fopen("..\\compressing.txt","r");
-            if (input== NULL){
-                printf("Error in opening input file!");
-                return 1;
-            }
-            result=decompressing(input,output);
-            break;
-        default:
-            printf("Wrong input!");
-            break;
-
-
+    fin = fopen(source, "r");
+    if (fin == NULL) {
+        printf("Error opening source file!\n");
+        return 0;
     }
 
-    fclose(input);
-    printf("Done.\n");
-    printf("-->%d char",result);
+    printf("Enter the destination filename: ");
+    scanf("%s", dest);
 
+    fout = fopen(dest, "w");
+    if (fout == NULL) {
+        printf("Error opening destination file!\n");
+        fclose(fin);
+        return 0;
+    }
 
+    printf("Enter 1 to compress, 2 to decompress: ");
+    scanf("%d", &choice);
+
+    if (choice == 1) {
+        if (!compressing(fin, fout)) {
+            printf("Error compressing file!\n");
+        }
+    } else if (choice == 2) {
+        if (!decompressing(fin, fout)) {
+            printf("Error decompressing file!\n");
+        }
+    } else {
+        printf("Invalid choice!\n");
+    }
+
+    fclose(fin);
+    fclose(fout);
     return 0;
 }
 
+int compressing(FILE *fin, FILE *fout)
+{
+    int c, count;
+    char last;
 
+    count = 0;
+    last = '\0';
 
-int compressing(FILE *fin, FILE *fout){
-    fout = fopen("..\\compressing.txt","w");
-    char ch1, ch2;
-    int repeat=0, totalChar=0 ,i=0;
-
-
-    ch1 = fgetc(fin);
-    while (!feof(fin)) {
-        ch2 = fgetc(fin);
-        if (ch2==ch1 && repeat < 9){
-            repeat++;
-        }
-        else {
-            if (repeat >= 2){
-                fprintf(fout,"%c$%d", ch1, repeat);
-                totalChar+=3;
-                repeat=0;
-            }
-            else{
-                for(i=0;i<repeat+1;i++){
-                    fputc(ch1, fout);
-                    totalChar++;
+    while ((c = fgetc(fin)) != EOF) {
+        if (isalpha(c)) {
+            if (c == last) {
+                count++;
+            } else {
+                if (count >= 2) {
+                    if (count > 9) {
+                        while (count > 9) {
+                            fputc(last, fout);
+                            fprintf(fout, "$9");
+                            count -= 9;
+                        }
+                    }
+                    fputc(last, fout);
+                    fprintf(fout, "$%d", count);
+                    count = 0;
                 }
-                repeat = 0;
+                last = c;
+            }
+        } else {
+            if (count >= 2) {
+                if (count > 9) {
+                    while (count > 9) {
+                        fputc(last, fout);
+                        fprintf(fout, "$9");
+                        count -= 9;
+                    }
+                }
+                fputc(last, fout);
+                fprintf(fout, "$%d", count);
+                count = 0;
+            }
+            last = '\0';
+            fputc(c, fout);
+        }
+    }
+
+    if (count >= 2) {
+        if (count > 9) {
+            while (count > 9) {
+                fputc(last, fout);
+                fprintf(fout, "$9");
+                count -= 9;
             }
         }
-        ch1=ch2;
+        fputc(last, fout);
+        fprintf(fout, "$%d", count);
+    } else if (last != '\0') {
+        fputc(last, fout);
     }
-    return totalChar;
+
+    return ftell(fout);
 }
 
-
-int decompressing(FILE *fin, FILE *fout){
-    fout = fopen("..\\decompressing.txt","w");
-
-    char ch1,ch2;
-    int totalChar=0 , repeat=0 ,i;
-
-    ch1= fgetc(fin);
-    while ( !feof(fin)){
-        ch2= fgetc(fin);
-        if (ch2=='$'){
-            repeat = fgetc(fin) - '0';
-            for (i=0;i<=repeat;++i){
-                fputc(ch1,fout);
-                ++totalChar;
+int decompressing(FILE *fin, FILE *fout) {
+    char c;
+    int count = 0;
+    while ((c = fgetc(fin)) != EOF) {
+        if (c == '$') {
+            // read the number of repetitions
+            int num_repetitions = 0;
+            while ((c = fgetc(fin)) != EOF && isdigit(c)) {
+                num_repetitions = num_repetitions * 10 + (c - '0');
             }
-            ch1= fgetc(fin);
-
-        } else{
-            fputc(ch1,fout);
-            totalChar++;
-            ch1=ch2;
+            // read the repeated character
+            if (c == EOF) {
+                return 0;
+            }
+            char repeated_char = c;
+            // write the repeated character to the output file
+            for (int i = 0; i < num_repetitions; i++) {
+                fputc(repeated_char, fout);
+                count++;
+            }
+        } else {
+            fputc(c, fout);
+            count++;
         }
-
-
     }
-    fclose(fout);
-    return totalChar;
+    return count;
 }
